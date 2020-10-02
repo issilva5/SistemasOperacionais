@@ -1,15 +1,12 @@
 package dinningP;
 
-import java.util.concurrent.Semaphore;
-
-public class SolutionSemaphore {
+public class SolutionMonitor {
 	
 	public static int PENSANDO = 0;
 	public static int FOME = 1;
 	public static int COMENDO = 2;
-	public static int N = 10;
-	public static Semaphore mutex = new Semaphore(1);
-	public static Philosopher[] filosofos = new Philosopher[N];
+	public static int N = 5;
+	public static PhilosopherMonitor[] filosofos = new PhilosopherMonitor[N];
 	
 	public static int esq(int i) {
 		
@@ -26,39 +23,48 @@ public class SolutionSemaphore {
 	public static void main(String[] args) {
 		
 		for (int i = 0; i < N; i++)
-			filosofos[i] = new Philosopher(i);
+			filosofos[i] = new PhilosopherMonitor(i);
 		
 	}
 
 	public static void pega_talher(int id) throws InterruptedException {
 		
-		mutex.acquire();
 		filosofos[id].estado = FOME;
 		if(filosofos[esq(id)].estado != COMENDO && filosofos[dir(id)].estado != COMENDO) {
-			filosofos[id].sem.release();
+			
 			filosofos[id].estado = COMENDO;
+			
+		} else synchronized (filosofos[id]) {
+			
+			filosofos[id].wait();
+			
 		}
-		mutex.release();
-		filosofos[id].sem.acquire();
 		
 	}
 
 	public static void larga_talher(int id) throws InterruptedException {
 		
-		mutex.acquire();
 		filosofos[id].estado = PENSANDO;
 		
 		if (filosofos[dir(id)].estado == FOME && filosofos[dir(dir(id))].estado != COMENDO) {
+			
 			filosofos[dir(id)].estado = COMENDO;
-			filosofos[dir(id)].sem.release();
+			
+			synchronized (filosofos[dir(id)]) {
+				filosofos[dir(id)].notify();
+			}
+			
 		}
 		
 		if (filosofos[esq(id)].estado == FOME && filosofos[esq(esq(id))].estado != COMENDO) {
+			
 			filosofos[esq(id)].estado = COMENDO;
-			filosofos[esq(id)].sem.release();
+			
+			synchronized (filosofos[esq(id)]) {
+				filosofos[esq(id)].notify();
+			}
+			
 		}
-		
-		mutex.release();
 		
 	}
 
